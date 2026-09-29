@@ -6,12 +6,21 @@ Kubernetes is used for deploying and managing hundreds or thousands of container
 
 ## Core components
 
-| Component                | Responsibility                                                                       |
-| ------------------------ | ------------------------------------------------------------------------------------ |
-| API Server               | Front door to Kubernetes; validates and processes API requests                       |
-| etcd                     | Strongly consistent key-value store containing cluster state                         |
-| Scheduler                | Selects a suitable node for every unscheduled Pod                                    |
-| Controller Manager       | Runs reconciliation controllers such as Deployment, ReplicaSet, and Node controllers |
+| Component          | Responsibility                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------ |
+| API Server         | Front door to Kubernetes; validates and processes API requests                       |
+| etcd               | Strongly consistent key-value store containing cluster state                         |
+| Scheduler          | Selects a suitable node for every unscheduled Pod                                    |
+| Controller Manager | Runs reconciliation controllers such as Deployment, ReplicaSet, and Node controllers |
+
+## Worker node components
+
+| Component         | Responsibility                                                     |
+| ----------------- | ------------------------------------------------------------------ |
+| kubelet           | Ensures the node's assigned Pods and containers are running        |
+| Container runtime | Runs containers, commonly containerd or CRI-O                      |
+| kube-proxy        | Implements Service networking, usually with iptables or IPVS rules |
+| CNI plugin        | Provides Pod networking and IP allocation, aws vpc cni / cilium    |
 
 ## Deployment creation flow
 
@@ -23,15 +32,6 @@ A more accurate flow is:
 4. The node's kubelet asks the container runtime to start the containers.
 
 Controllers do not normally create worker nodes themselves. Node provisioning is handled by systems such as Karpenter, Cluster Autoscaler, managed node groups, or cloud APIs.
-
-## Worker node components
-
-| Component         | Responsibility                                                     |
-| ----------------- | ------------------------------------------------------------------ |
-| kubelet           | Ensures the node's assigned Pods and containers are running        |
-| Container runtime | Runs containers, commonly containerd or CRI-O                      |
-| kube-proxy        | Implements Service networking, usually with iptables or IPVS rules |
-| CNI plugin        | Provides Pod networking and IP allocation, aws vpc cni / cilium    |
 
 ## Pods
 
@@ -136,6 +136,17 @@ A Pod is ephemeral, so anything stored inside it is lost when the Pod restarts. 
 
 CNI manages all networking-related things, including CIDR allocation and Pod networking.
 
+### ENI
+
+ENI = Elastic Network Interface.
+
+An ENI is a virtual network interface in AWS containing networking attributes such as:
+
+- Private IP addresses
+- Security groups
+- Subnet association
+- MAC address
+
 ## CoreDNS and Reloader in EKS
 
 ### CoreDNS
@@ -178,10 +189,6 @@ Ensures that certain Pods do not run on the same node as other Pods.
 ### Topology spread
 
 Topology spread helps distribute Pods across topological domains such as nodes, zones, or regions for better fault tolerance and resource utilization.
-
-### Persistent volume topology
-
-This is used to align persistent storage placement with node topology requirements.
 
 ### Taints and tolerations
 
@@ -278,6 +285,31 @@ Use StatefulSet when the application has stateful identity/storage requirements;
 - fully private clusters are supported
 - add-ons and Fargate can be used
 - cluster upgrades include control plane, add-ons, and nodes
+
+## 18. Cluster Upgrades
+
+A typical EKS upgrade involves checking/updating:
+
+```text
+1. Control Plane
+       ↓
+2. EKS Add-ons
+       ↓
+3. Worker Nodes
+```
+
+Before upgrades, verify:
+
+- Kubernetes API deprecations
+- Add-on compatibility
+- CNI version
+- kube-proxy version
+- CoreDNS version
+- Node AMIs
+- Workload compatibility
+- PodDisruptionBudgets
+- Admission webhooks
+- Custom resources/operators
 
 ## Webhooks
 
