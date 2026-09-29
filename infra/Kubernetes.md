@@ -12,7 +12,6 @@ Kubernetes is used for deploying and managing hundreds or thousands of container
 | etcd                     | Strongly consistent key-value store containing cluster state                         |
 | Scheduler                | Selects a suitable node for every unscheduled Pod                                    |
 | Controller Manager       | Runs reconciliation controllers such as Deployment, ReplicaSet, and Node controllers |
-| Cloud Controller Manager | Integrates Kubernetes with cloud load balancers, routes, and nodes                   |
 
 ## Deployment creation flow
 
@@ -32,7 +31,7 @@ Controllers do not normally create worker nodes themselves. Node provisioning is
 | kubelet           | Ensures the node's assigned Pods and containers are running        |
 | Container runtime | Runs containers, commonly containerd or CRI-O                      |
 | kube-proxy        | Implements Service networking, usually with iptables or IPVS rules |
-| CNI plugin        | Provides Pod networking and IP allocation                          |
+| CNI plugin        | Provides Pod networking and IP allocation, aws vpc cni / cilium    |
 
 ## Pods
 
