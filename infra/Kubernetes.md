@@ -123,7 +123,7 @@ A Pod is ephemeral, so anything stored inside it is lost when the Pod restarts. 
 
 - `emptyDir`: shared storage between containers in the same Pod; lost when the Pod restarts
 - `hostPath`: storage created at the node level; lost if the node is disrupted or the Pod is rescheduled elsewhere
-- `awsElasticBlockStore`: requires adding a volume ID to the manifest file
+- `Persistent volume / EBS CSI driver`: for persistent application data, Kubernetes commonly uses a `Pod -> PVC -> PV -> Storage` flow. In EKS, persistent storage is typically provided through CSI drivers such as the Amazon EBS CSI driver.
 
 ## Kubernetes dependency basics
 
@@ -205,22 +205,30 @@ A Kubernetes Service Account is attached to AWS IAM policies and roles.
 - IAM roles are mapped to the Service Account via OIDC
 - EKS admission controllers inject AWS session credentials into Pods based on the Service Account annotation
 
-## StatefulSets
+## 13. StatefulSet
 
-A StatefulSet is used to manage stateful applications.
+StatefulSet is used for workloads requiring stable identity and/or persistent storage.
 
-Unlike Deployments, which are designed for stateless apps, StatefulSets are built for applications that require:
+Example:
 
-- persistent storage
-- stable network identities
-- ordered and predictable deployment/scaling
+```text
+StatefulSet: database
 
-### Key features
+database-0
+database-1
+database-2
+```
 
-1. Stable network identity: each Pod gets a unique hostname such as `my-app-0`, `my-app-1`, `my-app-2`
-2. Stable storage: each Pod gets its own PersistentVolumeClaim (PVC)
-3. Ordered deployment and scaling: Pods are created and terminated in a defined order
-4. Graceful termination: Pods are terminated in reverse order during scale-down or deletion
+Important characteristics:
+
+- Stable Pod names
+- Stable network identity
+- Stable storage association
+- Ordered creation/scaling/termination behavior
+
+Persistent storage is commonly managed using PVCs.
+
+Use StatefulSet when the application has stateful identity/storage requirements; simply having a database does not automatically mean StatefulSet is always the correct operational model.
 
 ## EKS
 
