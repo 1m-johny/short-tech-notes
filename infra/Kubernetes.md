@@ -18,7 +18,7 @@ Kubernetes is used for deploying and managing hundreds or thousands of container
 | Component         | Responsibility                                                     |
 | ----------------- | ------------------------------------------------------------------ |
 | kubelet           | Ensures the node's assigned Pods and containers are running        |
-| Container runtime | Runs containers, commonly containerd or CRI-O                      |
+| Container runtime | Runs containers, commonly containerd or CRI-O, containerd          |
 | kube-proxy        | Implements Service networking, usually with iptables or IPVS rules |
 | CNI plugin        | Provides Pod networking and IP allocation, aws vpc cni / cilium    |
 
@@ -124,6 +124,96 @@ A Pod is ephemeral, so anything stored inside it is lost when the Pod restarts. 
 - `emptyDir`: shared storage between containers in the same Pod; lost when the Pod restarts
 - `hostPath`: storage created at the node level; lost if the node is disrupted or the Pod is rescheduled elsewhere
 - `Persistent volume / EBS CSI driver`: for persistent application data, Kubernetes commonly uses a `Pod -> PVC -> PV -> Storage` flow. In EKS, persistent storage is typically provided through CSI drivers such as the Amazon EBS CSI driver.
+
+# Kubernetes Persistent Storage: Static and Dynamic Provisioning
+
+Kubernetes Pods are ephemeral. When a Pod is deleted or replaced, data stored in the container filesystem is normally lost.
+
+Persistent storage separates the lifecycle of application data from the lifecycle of a Pod.
+
+### CSI Driver
+
+A Container Storage Interface (CSI) driver connects Kubernetes to a storage provider.
+
+For Amazon EBS, the CSI provisioner is:
+
+```yaml
+provisioner: ebs.csi.aws.com
+```
+
+## Storage Relationship
+
+```text
+Pod
+  │ references claimName
+  ▼
+PersistentVolumeClaim
+  │ binds to
+  ▼
+PersistentVolume
+  │ represents
+  ▼
+Actual storage, such as an AWS EBS volume
+```
+
+Applications reference PVCs rather than directly referencing PVs or cloud volume IDs.
+
+---
+
+# Static Provisioning
+
+In static provisioning, an administrator creates the actual storage and the Kubernetes PersistentVolume manually.
+
+## Static Provisioning Workflow
+
+```text
+Administrator creates an EBS volume
+              │
+              ▼
+Administrator creates a PV referencing its volume ID
+              │
+              ▼
+Developer creates a matching PVC
+              │
+              ▼
+Kubernetes binds the PVC to the PV
+              │
+              ▼
+Pod mounts the PVC
+```
+
+# Dynamic Provisioning
+
+In dynamic provisioning, administrators do not manually create the actual volume or PV.
+
+A StorageClass and CSI driver automatically create them when an application requests storage through a PVC.
+
+## Dynamic Provisioning Workflow
+
+```text
+Platform team creates a StorageClass
+              │
+              ▼
+Developer creates a PVC
+              │
+              ▼
+Pod references the PVC
+              │
+              ▼
+Scheduler determines the required availability zone
+              │
+              ▼
+CSI driver creates an EBS volume
+              │
+              ▼
+Kubernetes automatically creates a PV
+              │
+              ▼
+PV binds to the PVC
+              │
+              ▼
+Volume is attached and mounted to the Pod
+```
 
 ## Kubernetes dependency basics
 
